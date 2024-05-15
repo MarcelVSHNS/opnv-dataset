@@ -3,6 +3,7 @@ import numpy as np
 from ameisedataset import core as ameise
 from ameisedataset.data.names import Camera, Lidar
 import ameisedataset.utils.transformation as tf
+import ameisedataset.utils.image_functions as img_fkt
 import matplotlib
 import open3d as o3d
 from datetime import datetime, timezone
@@ -77,7 +78,7 @@ def plot_points_on_image(img, points, values, cmap_name="inferno", radius=2, val
     img.show()
 
 #infos, frames = ameise.unpack_record("/home/ameise/datasets/sequences_packed/2023-11-02_16-08-52_phase150both/id00051-id00100_1698937774641520377-1698937779541846231.4mse")
-infos, frames = ameise.unpack_record("/home/slam/datasets/packed/packed/test.4mse")
+infos, frames = ameise.unpack_record('/media/slam/external_ssd/datasets/packed/2024_04_20_esslingen_double_loop/id00801-id00850_1713624662200190647-1713624667100033583.4mse')
 
 """
 points_top = frames[-1].lidar[Lidar.OS1_TOP].points
@@ -101,17 +102,22 @@ print(f'Timestamp OS0_Left: {img_left_ts_human_readable}')
 """
 
 
-pts, proj = tf.get_points_on_image(frames[-1].lidar[ameise.Lidar.OS1_TOP].points, infos.lidar[ameise.Lidar.OS1_TOP], infos.cameras[Camera.STEREO_LEFT])
+pts, proj = tf.get_points_on_image(frames[30].lidar[ameise.Lidar.OS1_TOP].points, infos.lidar[ameise.Lidar.OS1_TOP], infos.cameras[Camera.STEREO_LEFT])
+pts2, proj2 = tf.get_points_on_image(frames[30].lidar[ameise.Lidar.OS0_RIGHT].points, infos.lidar[ameise.Lidar.OS0_RIGHT], infos.cameras[Camera.STEREO_LEFT])
+pts3, proj3 = tf.get_points_on_image(frames[30].lidar[ameise.Lidar.OS0_LEFT].points, infos.lidar[ameise.Lidar.OS0_LEFT], infos.cameras[Camera.STEREO_LEFT])
 
-image_left = frames[-1].cameras[Camera.STEREO_LEFT]
+all_points = np.concatenate([pts, pts2, pts3])
+all_proj = proj + proj2 + proj3
+
+image_left = frames[30].cameras[Camera.STEREO_LEFT]
 #image_right = frames[-1].cameras[Camera.STEREO_RIGHT]
 #points_top = frames[-1].lidar[Lidar.OS1_TOP]
 #print(points_top.get_timestamp())
 #print(np.amax(points_top.points['t']))
 
-im_rect_l = tf.rectify_image(image_left, infos.cameras[Camera.STEREO_LEFT])
+im_rect_l = img_fkt.rectify_image(image_left, infos.cameras[Camera.STEREO_LEFT])
 #im_rect_r = tf.rectify_image(image_right, infos.cameras[Camera.STEREO_RIGHT])
 #disparity_map = tf.create_disparity_map(im_rect_l, im_rect_r)
 
-plot_points_on_image(im_rect_l, proj, pts['range'], val_min=8, val_max=50)
+plot_points_on_image(im_rect_l, proj3, pts3['range'], val_min=5, val_max=40)
 #show_disparity_map(disparity_map, val_min=0, val_max=100)
